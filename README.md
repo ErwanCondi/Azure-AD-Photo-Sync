@@ -1,7 +1,6 @@
 # azure-ad-photo-sync
-This script is responsible for syncing photos from Azure to other systems.
-It is composed of main scripts in the root folder which will handle the logic and module scipts that contain functions and 
-classes definition.
+This script is for syncing photos from Azure AD to other systems. It can sync to your local AD directly or upload to an Azure storage where it can be picked up by any other system.
+It is composed of a main script in the root folder which will handle the logic and module scipts that contain functions and classes definition.
 
 ## Main Scripts definitions
 ### photoAzUsers_Action.ps1:
