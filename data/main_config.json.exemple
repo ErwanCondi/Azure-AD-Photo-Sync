@@ -1,0 +1,45 @@
+{
+    "env": "PRD",
+    "graphAPI": {
+        "tenantID": "Tenant ID where users reside",
+        "appID": "Client ID of the APP that has permission on the tenant",
+        "certificateThumbprint": "Certificate thumbprint of the APP to sign the JWT"
+    },
+	
+	"thirdParties":[
+		{
+			"name": "Friendly name for the logs",
+			"type": "azStorage",
+        	"tenantID": "Tenant ID where the storage account reside",
+			"storageSubscription": "Subscription of the storage account",
+			"storageAccount": "Storage account name",
+			"storageContainer": "Storage container name",
+        	"appID": "Client ID of the APP that has permission on the storage account",
+			"certificateThumbprint": "Certificate thumbprint of the APP to sign the JWT",
+			"picMaxSize": 5000,
+			"picMaxWeight": 104857600
+		},
+		{
+			"name": "sap",
+			"type": "azStorage",
+        	"tenantID": "00000000-0000-0000-0000-000000000000",
+			"storageSubscription": "00000000-0000-0000-0000-000000000000",
+			"storageAccount": "azure-storage-prd",
+			"storageContainer": "azure-picture-exchange",
+        		"appID": "00000000-0000-0000-0000-000000000000",
+			"certificateThumbprint": "B00A0093894DF911497B2560C6CA40A1728044FC",
+			"picMaxSize": 5000,
+			"picMaxWeight": 104857600
+		},
+		{
+			"name": "AD-Prod",
+			"type": "activeDirectory",
+			"domain": "yourdomain.local",
+			"whatIf": "False",
+    		"Username":  "svc_userphoto@yourdomain.local",
+			"password":  "Requires a password converted to DPAPI string. Use the following PS command: ConvertFrom-SecureString $(Read-Host -AsSecureString)",
+			"picMaxSize": 96,
+			"picMaxWeight": 10240
+		}
+	]
+}
