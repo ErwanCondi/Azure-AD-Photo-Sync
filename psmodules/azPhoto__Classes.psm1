@@ -17,26 +17,22 @@ enum MessageType{
     Warning
 }
 
-enum ActionResults
-{
+enum ActionResults{
     NotStarted
     Success
     Skipped
     Error
 }
 
-class Print
-{
+class Print{
     static [void]Display(
         [string]$message,
         [MessageType]$messageType = [MessageType]::Info
-    )
-    {
+    ){
         [string]$category = [string]
         [string]$ForegroundColor = [string]
 
-        switch ($messageType.value__)
-        {
+        switch ($messageType.value__){
             0 {
                 $category = $messageType.ToString() + "   "
                 $ForegroundColor = "White"
@@ -55,8 +51,7 @@ class Print
     }
 }
 
-class Action
-{
+class Action{
     [DateTime]$Created
     [String]$ActionId
     [ActionName]$ActionName
@@ -69,8 +64,7 @@ class Action
     [String]$CurrentPicture
     [String]$NewPicture
 
-    Action([String]$ActionName, [String]$ThirdParty, [PSCustomObject]$User)
-    {
+    Action([String]$ActionName, [String]$ThirdParty, [PSCustomObject]$User){
         $this.Created = [DateTime]::Now
         $this.ActionId = [guid]::NewGuid().Guid.Replace('-', '').Substring(0, 15)
         $this.ActionName = $ActionName
@@ -81,8 +75,7 @@ class Action
         $this.Attempts = 0
         $this.Error = [ArrayList]::new()
     }
-    Action([PSObject]$SavedAction)
-    {
+    Action([PSObject]$SavedAction){
         $this.Created       = $SavedAction.Created
         $this.ActionId      = $SavedAction.ActionId
         $this.ActionName    = $SavedAction.ActionName
@@ -93,36 +86,30 @@ class Action
         $this.Attempts      = $SavedAction.Attempts
         $this.Error         = $SavedAction.Error
 
-        if($SavedAction.CurrentPicture)
-        {
+        if($SavedAction.CurrentPicture){
             $this.CurrentPicture = $SavedAction.CurrentPicture
         }
-        if($SavedAction.NewPicture)
-        {
+        if($SavedAction.NewPicture){
             $this.NewPicture     = $SavedAction.NewPicture
         }
     }
 }
 
-class UserImage
-{
+class UserImage{
     [byte[]]$PictureByte
     [string]$PicturePath
 
     # constructor providing byte array directly
-    hidden UserImage([byte[]]$PictureByte)
-    {
+    hidden UserImage([byte[]]$PictureByte){
         $this.PictureByte = $PictureByte
     }
     # constructor to store the bytearray and filepath
-    hidden UserImage([byte[]]$PictureByte, $FilePath)
-    {
+    hidden UserImage([byte[]]$PictureByte, $FilePath){
         $this.PictureByte = $PictureByte
         $this.PicturePath = $FilePath
     }
     # constructor to create a picture from a string
-    hidden UserImage([String]$Text)
-    {
+    hidden UserImage([String]$Text){
         # Select a random background color from the list
         $colors = $("Aqua","Aquamarine","Bisque","Black","Blue","BlueViolet","Brown","BurlyWood","ButtonShadow","CadetBlue","Chartreuse","Chocolate","Coral","CornflowerBlue","Crimson","Cyan","DarkBlue","DarkCyan","DarkGoldenrod","DarkGray","DarkGreen","DarkKhaki","DarkMagenta","DarkOliveGreen","DarkOrange","DarkOrchid","DarkRed","DarkSalmon","DarkSeaGreen","DarkSlateBlue","DarkSlateGray","DarkTurquoise","DarkViolet","DeepPink","DeepSkyBlue","Desktop","DimGray","DodgerBlue","Firebrick","ForestGreen","Fuchsia","Gainsboro","Gold","Goldenrod","GradientActiveCaption","GradientInactiveCaption","Gray","Green","GreenYellow","HotPink","IndianRed","Indigo","Khaki","Lavender","LawnGreen","LightBlue","LightCoral","LightGray","LightGreen","LightPink","LightSalmon","LightSeaGreen","LightSkyBlue","LightSlateGray","LightSteelBlue","Lime","LimeGreen","Magenta","Maroon","MediumAquamarine","MediumBlue","MediumOrchid","MediumPurple","MediumSeaGreen","MediumSlateBlue","MediumSpringGreen","MediumTurquoise","MediumVioletRed","MidnightBlue","MistyRose","Moccasin","NavajoWhite","Navy","Olive","OliveDrab","Orange","OrangeRed","Orchid","PaleGreen","PaleTurquoise","PaleVioletRed","PeachPuff","Peru","Pink","Plum","PowderBlue","Purple","Red","RosyBrown","RoyalBlue","SaddleBrown","Salmon","SandyBrown","SeaGreen","Sienna","Silver","SkyBlue","SlateBlue","SlateGray","SpringGreen","SteelBlue","Tan","Teal","Thistle","Tomato","Turquoise","Violet","Wheat","YellowGreen")
         $backgroundColor = [color]::FromName( $($colors | Get-Random ))
@@ -176,62 +163,51 @@ class UserImage
     }
     
     # constructor to create a picture from user's initials - First Name + Last name
-    static [UserImage]CreateFromInitials([String]$stringA, [String]$stringB)
-    {
+    static [UserImage]CreateFromInitials([String]$stringA, [String]$stringB){
         $txt = $stringA[0] + $stringB[0]
         return [UserImage]::New($txt)
     }
     # constructor to create a picture from user's initials - Only firstname
-    static [UserImage]CreateFromInitials([String]$stringA)
-    {
-        if ($stringA.Length -ge 2)
-        {
+    static [UserImage]CreateFromInitials([String]$stringA){
+        if ($stringA.Length -ge 2){
             $txt = $stringA[0] + $stringA[1]
         }
-        else
-        {
+        else{
             $txt = $stringA[0] + '.'
         }
         return [UserImage]::New($txt)
     }
 
     # constructor reading from file
-    static [UserImage]GetFromFile([String]$FilePath)
-    {
+    static [UserImage]GetFromFile([String]$FilePath){
         [byte[]]$byte = [File]::ReadAllBytes($FilePath)
         return [UserImage]::New($byte, $FilePath)
     }
 
     # constructor reading from byte array
-    static [UserImage]GetFromByteArray([byte[]]$PictureByte)
-    {
+    static [UserImage]GetFromByteArray([byte[]]$PictureByte){
         return [UserImage]::New($PictureByte)
     }
 
     # To create another object based on the same byte array
-    [UserImage]Clone()
-    {
+    [UserImage]Clone(){
         return [UserImage]::New($this.PictureByte)
     }
 
     # To resize a picture to desired size and weight
-    [void]Resize([int]$targetSize, [int]$maxWeight)
-    {
+    [void]Resize([int]$targetSize, [int]$maxWeight){
         # Convert the byte array to an System.Drawing.Image object
         $image = [Image]::FromStream([MemoryStream]::new($this.PictureByte))
 
         # decide if the picture actually needs to be resized or not
-        if ($image.Width -gt $targetSize -or $image.Height -gt $targetSize)
-        {
+        if ($image.Width -gt $targetSize -or $image.Height -gt $targetSize){
             # Calculate the image ratio, height and width
-            if ($image.Width -gt $image.Height)
-            {
+            if ($image.Width -gt $image.Height){
                 $ratio = $image.Width / $image.Height
                 $height = [Convert]::ToInt32($targetSize / $ratio)
                 $width = $targetSize
             }
-            else
-            {
+            else{
                 $ratio = $image.Height / $image.Width;
                 $height = $targetSize
                 $width = [Convert]::ToInt32($height / $ratio);
@@ -265,8 +241,7 @@ class UserImage
             # Quality starts at 100 and is decreased every loop until the picture size is lower than the requested MaxWeight
             $quality = 100
             $retries = 0
-            do
-            {
+            do{
                 $retries ++
                 $encoderParameters = [EncoderParameters]::new(1)
                 $encoderParameters.Param = [EncoderParameter]::new([Encoder]::Quality, $quality)
@@ -283,8 +258,7 @@ class UserImage
     }
 
     # to write an image to a file
-    [void]WriteImageToFile([string]$FilePath)
-    {
+    [void]WriteImageToFile([string]$FilePath){
         $this.PicturePath = $FilePath
         $memStream = [MemoryStream]::new($this.PictureByte)
         $image = [Image]::FromStream($memStream)

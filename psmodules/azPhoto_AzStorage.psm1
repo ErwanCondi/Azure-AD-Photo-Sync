@@ -2,8 +2,7 @@
 Import-Module Az.Accounts -RequiredVersion 2.10.3 -ErrorAction Stop
 Import-Module Az.Storage -ErrorAction Stop
 
-function StorageLogin
-{
+function StorageLogin{
     param ([string]$certThumbprint,
            [string]$AppId,
            [string]$Tenant,
@@ -18,8 +17,7 @@ function StorageLogin
     return $StorageContext
 }
 
-function UploadToStorage
-{
+function UploadToStorage{
     param ([string]$File,
            [string]$Container,
            [Hashtable]$Metadata,

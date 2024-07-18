@@ -6,8 +6,7 @@ $assemblies = $('System.Drawing',
                 'System.Collections')
 
 
-foreach ($assembly in $assemblies)
-{
+foreach ($assembly in $assemblies){
     $dll = gci "C:\Windows\Microsoft.NET\assembly" -Recurse -File -Filter $($assembly + '.dll')
     Add-Type -Path $dll.FullName
 }

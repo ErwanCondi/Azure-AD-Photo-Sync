@@ -8,96 +8,91 @@ using module .\azPhoto__Classes.psm1
 
 
 # helper functions
-function ConvertParameters
-{
+function ConvertParameters{
     param(
         [Hashtable]$Param,
         [validateSet('Where','Set','Insert')]
         [string]$Statement
     )
 
-    if ($Param)
-    {
-        $conditions = foreach ($key in $Param.Keys)
-        {
-            try
-            {
+    if ($Param){
+        $conditions = foreach ($key in $Param.Keys){
+            try{
                 $value = $Param[$key]
                 $typeName = $value.GetType().FullName
 
-                switch ($typeName)
-                {
-                    { $_ -eq 'System.Boolean' }
+                switch ($typeName){
+                    {
+                        $_ -eq 'System.Boolean'
+                    }
                     {
                         @{$key=$([convert]::ToInt16($value))}
                         break
                     }
 
-                    { $_ -eq 'System.String' }
+                    {
+                        $_ -eq 'System.String'
+                    }
                     {
                         @{$key="`"$($value)`""}
                         break
                     }
 
-                    { $_ -match 'System.Int' -or $_ -eq 'System.Double' -or $_ -eq 'System.Decimal' }
+                    {
+                        $_ -match 'System.Int' -or $_ -eq 'System.Double' -or $_ -eq 'System.Decimal'
+                    }
                     {
                         @{$key=$([convert]::ToDouble($value))}
                         break
                     }
                 }
-            }catch {continue}
+            }
+            catch{
+                continue
+            }
         }
 
-        if ($Statement -eq "Where")
-        {
+        if ($Statement -eq "Where"){
             return "WHERE $( [String]::Join(' AND ', $( $conditions | % { "$($_.Keys)=$($_.Values)" } )))"
         }
-        elseif ($Statement -eq "Set")
-        {
+        elseif ($Statement -eq "Set"){
             return "SET $( [String]::Join(',', $( $conditions | % { "$($_.Keys)=$($_.Values)" } )))"
         }
-        elseif ($Statement -eq "Insert")
-        {
+        elseif ($Statement -eq "Insert"){
             return "( $([String]::Join(',', $conditions.Keys)) ) VALUES ( $( [String]::Join(',', $conditions.Values ) ) )"
         }
     }
 }
 
-function CheckDBNull($value)
-{
+function CheckDBNull($value){
     if ($value -eq [System.DBNull]::Value){return $null}
     else{return $value}
 }
 
 
 # general functions
-function SQLiteConnect
-{
+function SQLiteConnect{
     param(
         [string]$databasePath
         )
-    try
-    {
+    try{
         $global:SqLiteConnection = [System.Data.SQLite.SQLiteConnection]::new()
         $SqLiteConnection.ConnectionString = "Data Source=$databasePath"
         $SqLiteConnection.Open()
         [print]::Display("Database file is open. $databasePath", "info")
     }
-    catch
-    {
+    catch{
         [print]::Display("Database file failed open. $databasePath", "error")
         [print]::Display("$_", "error")
     }
 }
 
-function SQLiteCommand
-{
+function SQLiteCommand{
     param(
     [String]$Command,
     [switch]$noOut)
 
-    try
-    {
+    try{
         [print]::Display($Command, "Info")
         $sqlQuery = $SqLiteConnection.CreateCommand()
         $sqlQuery.CommandText = $Command
@@ -110,23 +105,20 @@ function SQLiteCommand
             return $data
         }
     }
-    catch
-    {
+    catch{
         [print]::Display($Command, "error")
         [print]::Display($_, "error")
         throw $_
     }
 }
 
-function SQLiteListAllTables
-{
+function SQLiteListAllTables{
     $sqLiteCommand = "SELECT * FROM sqlite_master"
     return SQLiteCommand -Command $sqLiteCommand | select -ExpandProperty Tables
 }
 
 # Users table functions
-function SQLiteAddUser
-{
+function SQLiteAddUser{
     param
     (
         [HashTable]$Insert
@@ -138,8 +130,7 @@ function SQLiteAddUser
     SQLiteCommand -Command $sqLiteCommand -noOut
 }
 
-function SQLiteGetUser
-{
+function SQLiteGetUser{
     param(
         [Hashtable]$Where
     )
@@ -161,8 +152,7 @@ function SQLiteGetUser
                                 @{n='photoid';e={CheckDBNull -value $_.photoid}}
 }
 
-function SQLiteUpdateUser
-{
+function SQLiteUpdateUser{
     param(
         [HashTable]$Where,
         [HashTable]$Set
@@ -175,8 +165,7 @@ function SQLiteUpdateUser
 }
 
 # Photos table functions
-function SQLiteAddPhoto
-{
+function SQLiteAddPhoto{
     param
     (
         [HashTable]$Insert # id, filename, belongsto
@@ -188,8 +177,7 @@ function SQLiteAddPhoto
     SQLiteCommand -Command $sqLiteCommand -noOut
 }
 
-function SQLiteGetPhoto
-{
+function SQLiteGetPhoto{
     param(
         [Hashtable]$Where
     )
@@ -203,8 +191,7 @@ function SQLiteGetPhoto
 }
 
 # actions table functions
-function SQLiteAddAction
-{
+function SQLiteAddAction{
     param
     (
         [HashTable]$Insert # actionname, thirdparty, userid, currentpicture, newpicture
@@ -241,8 +228,7 @@ function SQLiteGetAction
                          @{n='newpicture';e={CheckDBNull -value $_.newpicture}}
 }
 
-function SQLiteUpdateAction
-{
+function SQLiteUpdateAction{
     param(
         [HashTable]$Where,
         [HashTable]$Set
@@ -284,26 +270,30 @@ $Where = @{userid='e0293d2b-66d7-4f06-b7f2-816c74bb3fd7';isactive=$false;actionr
 
 
 $conditions = @()
-$conditions = foreach ($key in $Where.Keys)
-{
+$conditions = foreach ($key in $Where.Keys){
     $value = $Where[$key]
     $typeName = $value.GetType().FullName
 
-    switch ($typeName)
-    {
-        { $_ -eq 'System.Boolean' }
+    switch ($typeName){
+        {
+            $_ -eq 'System.Boolean'
+        }
         {
             "$key=$([convert]::ToInt16($value))"
             break
         }
 
-        { $_ -eq 'System.String' }
+        {
+            $_ -eq 'System.String'
+        }
         {
             "$key=`"$($value)`""
             break
         }
 
-        { $_ -eq 'System.Int32' -or $_ -eq 'System.Double' -or $_ -eq 'System.Decimal' }
+        {
+            $_ -eq 'System.Int32' -or $_ -eq 'System.Double' -or $_ -eq 'System.Decimal'
+        }
         {
             "$key=$value"
             break
@@ -311,8 +301,6 @@ $conditions = foreach ($key in $Where.Keys)
     }
 }
 
-if ($conditions)
-{
+if ($conditions){
     $whereStatement = "WHERE $([string]::Join(',', $conditions))"
 }
-

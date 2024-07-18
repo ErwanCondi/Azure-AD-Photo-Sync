@@ -6,22 +6,18 @@ using namespace System.Text
 using module .\azPhoto__Classes.psm1
 
 
-function formatHttpError
-{
+function formatHttpError{
     $streamError = $_.Exception.Response.GetResponseStream()
     $jsonError = [System.IO.StreamReader]::new( $streamError ).ReadToEnd()
     $objError = ($jsonError | ConvertFrom-Json).Error
     return $objError | select Code, `                                message, `                                @{n='Date';e={[datetime]::Parse($_.innererror.date)}}, `                                @{n='RequestId';e={$_.innererror.'request-id'}}, `                                @{n='ClientRequestId ';e={$_.innererror.'client-request-id' }}
 }
 
-function getUrl($url, $caller)
-{
+function getUrl($url, $caller){
     $retry = 1
-    do
-    {
+    do{
         $retry++
-        try
-        {
+        try{
         	$authorizationHeader = @{Authorization = "Bearer $($accessToken.token)"}
             $getRequest = $null
             [print]::Display("$caller : Querying $url", "Info")
@@ -31,8 +27,7 @@ function getUrl($url, $caller)
 										-ContentType "application/json" `
 										-UseBasicParsing `                                        -ErrorAction Stop
         }
-        catch [System.Net.WebException]
-        {
+        catch [System.Net.WebException]{
             $cleanError = formatHttpError
 
             
@@ -40,23 +35,19 @@ function getUrl($url, $caller)
             [print]::Display("$caller : Response message - $($cleanError.message)", "error")
             [print]::Display("$caller : Request ID       - $($cleanError.RequestId)", "error")
 
-            if ($cleanError.code -eq 'InvalidAuthenticationToken')
-            {
+            if ($cleanError.code -eq 'InvalidAuthenticationToken'){
                 [print]::Display("$caller : Refreshing token", "info")
                 ConnectToGraphAPI -TenantID $accessToken.TenantID -AppId $accessToken.AppId -CertificatePath $accessToken.CertificatePath
             }
-            elseif ($cleanError.code -eq 'ImageNotFound' -or `                    $cleanError.code -eq 'Request_BadRequest' -or `                    $cleanError.code -eq 'EnterpriseEntityNotFound' -or `                    $cleanError.code -eq 'Request_ResourceNotFound' -or `                    $cleanError.code -eq 'Request_BadRequest')
-            {
+            elseif ($cleanError.code -eq 'ImageNotFound' -or `                    $cleanError.code -eq 'Request_BadRequest' -or `                    $cleanError.code -eq 'EnterpriseEntityNotFound' -or `                    $cleanError.code -eq 'Request_ResourceNotFound' -or `                    $cleanError.code -eq 'Request_BadRequest'){
                 break
             }
-            else
-            {   
+            else{   
                 Start-Sleep -Milliseconds $($retry*1000*0.5)
                 [print]::Display("$caller : Retrying $url", "Warning")
             }
         }
-        catch
-        {
+        catch{
             [print]::Display("$caller : $_", "error")
         }
     } while ($getRequest.StatusCode -ne 200 -and $retry -le 10)
@@ -162,8 +153,7 @@ function ConnectToGraphAPI
 }
 
 
-function GetGraphUserPhotoMetadata
-{
+function GetGraphUserPhotoMetadata{
     # Function to get the etag (unique id) of the picture of each users.
     # uses the batch url (if more than one user is provided) to lower the amout of requests done to the api.
     # 20 items per batch as maximum allowed.
@@ -177,8 +167,7 @@ function GetGraphUserPhotoMetadata
         [Switch]$useBatch
     )
 
-    begin
-    {
+    begin{
         # Build base variables
         $fnOutput = @()
         $batchUrl = "https://graph.microsoft.com/v1.0/`$batch"
@@ -190,12 +179,10 @@ function GetGraphUserPhotoMetadata
         $usersProcessed = 0
     }
 
-    process
-    {
-        if ($users -and $useBatch)
-        {
-            foreach ($user in $users)
-            {
+    process{
+        if ($users -and $useBatch){
+
+            foreach ($user in $users){
                 Write-Progress -Activity "fetching photo Ids" -PercentComplete $( 100*$fnOutput.Count / $users.Count ) -Status "Batch number : $batchNumber"
 
                 $requestID ++
@@ -217,8 +204,7 @@ function GetGraphUserPhotoMetadata
                 $batchRequests += $photoRequest
 
                 # when global request reaches 20 items, it's time to make the query.
-                if ($requestID -eq 20 -or $usersProcessed -eq $users.count)
-                {
+                if ($requestID -eq 20 -or $usersProcessed -eq $users.count){
                     [print]::Display("Fetching batch $batchNumber", "info")
                     $allBatchRequests =  [pscustomobject][ordered]@{ 
                         requests = $batchRequests
@@ -227,14 +213,12 @@ function GetGraphUserPhotoMetadata
                     $batchBody = $allBatchRequests | ConvertTo-Json -Compress
 
                     # Check if the token is expired and refresh if it is
-                    if ($accessToken.expires -lt [datetime]::Now)
-                    {
+                    if ($accessToken.expires -lt [datetime]::Now){
                         ConnectToGraphAPI -TenantID $accessToken.TenantID -AppId $accessToken.AppId -CertificatePath $accessToken.CertificatePath
                     }
 
                     # Make the query
-                    try
-                    {
+                    try{
         			    $authorizationHeader = @{Authorization = "Bearer $($accessToken.token)"}
                         $getBatchRequests = Invoke-RestMethod -Method Post `
 															    -Uri $batchUrl `
@@ -243,17 +227,14 @@ function GetGraphUserPhotoMetadata
 															    -ContentType "application/json" `
 															    -UseBasicParsing
                     }
-                    catch
-                    {
+                    catch{
                         $_
                         break
                     }
 
                     # Format properly the etag
-                    foreach ($response in $getBatchRequests.responses)
-                    {
-                        if ($response.status -eq 200)
-                        {
+                    foreach ($response in $getBatchRequests.responses){
+                        if ($response.status -eq 200){
                             $usersTempOut[$response.id -1 ].photoId = [regex]::Match(  $response.body.'@odata.mediaEtag', '\w{64}').Value
                         }
                     }
@@ -271,10 +252,8 @@ function GetGraphUserPhotoMetadata
                 }
             }
         }
-        elseif ($users)
-        {
-            foreach ($user in $users)
-            {
+        elseif ($users){
+            foreach ($user in $users){
                 Write-Progress -Activity "fetching photo Ids" -PercentComplete $( 100*$fnOutput.Count / $users.Count ) -Status "Fetching for : $user"
 
                 
@@ -284,8 +263,7 @@ function GetGraphUserPhotoMetadata
                 # Create a custom object to store user information
                 $content = $null
 
-                if ($request.Content)
-                {
+                if ($request.Content){
                     $content = $request.Content | ConvertFrom-Json
                 }
 
@@ -295,16 +273,14 @@ function GetGraphUserPhotoMetadata
                                                    }
             }
         }
-        elseif ($user)
-        {
+        elseif ($user){
             $url = $usersUrl + "/$user/photo"
             $request = getUrl -url $url -caller $MyInvocation.MyCommand.Name
 
             # Create a custom object to store user information
             $content = $null
 
-            if ($request.Content)
-            {
+            if ($request.Content){
                 $content = $request.Content | ConvertFrom-Json
             }
                 
@@ -314,32 +290,26 @@ function GetGraphUserPhotoMetadata
                                             }
         }
     }
-    end
-    {
+    end{
         return $fnOutput
     }
 }
 
 
-function GetGraphUserPhoto
-{
+function GetGraphUserPhoto{
     # Function to actually download the photo data from the API
     param (
     [string]$user
     )
 
-    begin
-    {
+    begin{
         $url = "https://graph.microsoft.com/v1.0/users/$user/photo/`$value"
     }
-    process
-    {
+    process{
         $request = getUrl -url $url -caller $MyInvocation.MyCommand.Name
     }
-    end
-    {
-        if ($request.Content)
-        {
+    end{
+        if ($request.Content){
             # return output as [Byte[]]
             $byte = $request.Content | ConvertFrom-Json
             return [UserImage]::GetFromByteArray($byte)
@@ -348,14 +318,11 @@ function GetGraphUserPhoto
 }
 
 
-function GetGraphUsersAll
-{
+function GetGraphUsersAll{
     # Function to get all users from Azure
-    begin
-    {
+    begin{
 		# Check if the token is expired and refresh if it is
-		if ($accessToken.expires -lt [datetime]::Now)
-		{
+		if ($accessToken.expires -lt [datetime]::Now){
 			ConnectToGraphAPI -TenantID $accessToken.TenantID -AppId $accessToken.AppId -CertificatePath $accessToken.CertificatePath
 		}
 
@@ -363,13 +330,11 @@ function GetGraphUsersAll
         $url = "https://graph.microsoft.com/v1.0/users?`$count=true&`$filter=userType eq 'Member'&`$select=id,employeeId,onPremisesExtensionAttributes&`$top=999"
         $users = @()
     }
-    process
-    {
+    process{
         # Make the calls.
         # Each call returns a "odata.nextLink" if more objects are available to return.
         # Loop recurse until no "odata.nextLink" is returned wich means we've reach the end
-        do
-        {
+        do{
             $jsonOutPut = Invoke-WebRequest -Method Get `
 											-Uri $url `
 											-Headers $authorizationHeader `
@@ -381,40 +346,34 @@ function GetGraphUsersAll
 
         } while ($operationResult.'@odata.nextLink')
     }
-    end
-    {
+    end{
         # returns an array of UserPrincipalNames
         return $users | select id,employeeId,@{n='ExtensionAttributes';e={$_.onPremisesExtensionAttributes}}
     }
 }
 
 
-function GetGraphUser
-{
+function GetGraphUser{
     param(
         [string]$identity
         )
 
     # Function to get all infos from Az AD user
-    begin
-    {
+    begin{
         $url = "https://graph.microsoft.com/v1.0/users/$($identity)?`$select=displayName,surname,givenName,userPrincipalName,onPremisesSecurityIdentifier,id,employeeId,onPremisesExtensionAttributes"
     }
-    process
-    {
+    process{
 
         $request = getUrl -url $url -caller $MyInvocation.MyCommand.Name
 
-        if ($request.Content)
-        {
+        if ($request.Content){
             $content = $request.Content | ConvertFrom-Json
         }
 
         $output = $content | select DisplayName, `                                    Surname, `                                    GivenName, `                                    UserPrincipalName, `                                    @{n='OnPremSID';e={$_.onPremisesSecurityIdentifier}}, `                                    @{n='AzureId';e={$_.id}},`                                    EmployeeId, `
                                     PhotoId, `                                    @{n='ExtensionAttributes';e={$_.onPremisesExtensionAttributes}}
     }
-    end
-    {
+    end{
         return $output
     }
 }
